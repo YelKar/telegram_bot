@@ -74,3 +74,4 @@ def stickers(sticker_name: str):
     with open("stickers.json", "r", encoding="UTF-8") as file:
         sticker_dict = json.loads(file.read())["stickers"]
     return sticker_dict[sticker_name]
+
