@@ -2,6 +2,7 @@ from time import strftime
 from telegram.ext import MessageHandler, Filters, CommandHandler, Updater, CallbackContext
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 import json
+from base import *
 
 
 # /info
@@ -21,6 +22,7 @@ def info(update: Update, context: CallbackContext) -> None:
 # hello
 def say_hello(update: Update, context: CallbackContext) -> None:
     name = update.message.from_user.first_name
+    print(update.message.from_user.id, type(update.message.from_user.id))
     update.message.reply_text(text=f"Привет, {name}!")
 
 
@@ -39,30 +41,32 @@ def img(update: Update, context: CallbackContext):
 def all_echo(update: Update, context: CallbackContext):
     sticker = update.message.sticker
     text = update.message.text
-    if sticker:
-        sticker_id = sticker.file_id
-        update.message.reply_sticker(sticker_id)
-        print(sticker)
-    if text:
-        update.message.reply_text(text)
-        update.message.reply_sticker(stickers("Cherry"))
+    # print(update.message.from_user.id, type(update.message.from_user.id))
+
+    if text in get_stickers():
+        if get_stickers(text)[1]:
+            update.message.reply_text(get_stickers(text)[1])
+        if get_stickers(text)[0]:
+            update.message.reply_sticker(get_stickers(text)[0])
 
 
 # /keyboard -> Создание клавиатуры
 def keyboard(update: Update, context: CallbackContext) -> None:
     buttons = [
-        ["1", "2", "3"],
+        ["Добавить стикер"],
         ["Привет", "Пока"]
     ]
     update.message.reply_text(
-        text="text",
-        reply_markup=ReplyKeyboardMarkup(buttons)
+        text="Клавиатура выведена",
+        reply_markup=ReplyKeyboardMarkup(buttons),
+
     )
 
 
-# /sticker
 def show_sticker(update: Update, context: CallbackContext) -> None:
-    pass
+    text = update.message.text
+    if text in get_stickers():
+        update.message.reply_sticker(get_stickers(text))
 
 
 # /comm

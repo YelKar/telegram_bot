@@ -32,9 +32,6 @@ def main():
         MessageHandler(Filters.text("Клавиатура"), keyboard)
     )
     dispatcher.add_handler(
-        MessageHandler(Filters.text("Привет"), say_hello)
-    )
-    dispatcher.add_handler(
         MessageHandler(Filters.all, all_echo)
     )
     updater.start_polling()

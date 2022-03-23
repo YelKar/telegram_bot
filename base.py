@@ -1,17 +1,20 @@
 from openpyxl import load_workbook, worksheet
 
 bd = load_workbook("base.xlsx")
+sticker_page: worksheet.worksheet.Worksheet = bd["stickers"]
+print(type(sticker_page) == worksheet.worksheet.Worksheet)
 
 
 def print_table(page: str = "stickers"):
-    for key, val in bd[page].values:
-        print(key.ljust(20), val)
+    for key, val, ans in bd[page].values:
+        print(str(key).ljust(20), str(val).ljust(80), str(ans))
 
 
-def dict_table(page: str = "stickers"):
-
-    with load_workbook("base.xlsx") as db:
-        return {key: val for key, val in db[page].values}
+def get_stickers(sticker_name: str = None, page: str = "stickers"):
+    db = load_workbook("base.xlsx")
+    return get_stickers(page=page).get(sticker_name, None)\
+        if sticker_name \
+        else {key: val for key, *val in db[page].values}
 
 
 def about_sheet(table: worksheet.worksheet.Worksheet = bd["stickers"]):
@@ -21,12 +24,52 @@ def about_sheet(table: worksheet.worksheet.Worksheet = bd["stickers"]):
     print("_" * 100)
 
 
-if __name__ == '__main__':
-    stickers_page = bd["stickers"]
+def insert_sticker(keyword, sticker, answer):
+    row = sticker_page.max_row + 1
+    sticker_page.cell(row=row, column=1).value = keyword
+    sticker_page.cell(row=row, column=2).value = sticker
+    sticker_page.cell(row=row, column=3).value = answer
+    bd.save("base.xlsx")
 
-    print(type(bd["stickers"]))
-    print(stickers_page.title)
+
+class DB:
+    def __init__(self):
+        self.route = "base.xlsx"
+
+    def users(self):
+        db = load_workbook(self.route)
+        page = db["users"]
+        user_dict = {
+            key: {
+                "name": name,
+                "sex": sex,
+                "grade": grade
+            }
+            for key, name, sex, grade
+            in page.values
+        }
+        db.close()
+        return user_dict
+
+    def stickers(self):
+        db = load_workbook(self.route)
+        page = db["stickers"]
+        stickers_dict = {
+            key: {
+                "sticker": sticker,
+                "answer": answer
+            }
+            for key, sticker, answer
+            in page.values
+        }
+        db.close()
+        return stickers_dict
+
+
+if __name__ == '__main__':
+
+    print(type(bd["stickers"].values))
+    print(sticker_page.title)
     print_table()
 
     about_sheet()
-
