@@ -51,6 +51,13 @@ class DB:
         db.close()
         return user_dict
 
+    def new_user(self, user):
+        db = load_workbook(self.route)
+        page = db["users"]
+        row = page.max_row + 1
+        for col, val in enumerate(user):
+            page.cell(row=row, column=col+1).value = val
+
     def stickers(self):
         db = load_workbook(self.route)
         page = db["stickers"]
