@@ -57,6 +57,8 @@ class DB:
         row = page.max_row + 1
         for col, val in enumerate(user):
             page.cell(row=row, column=col+1).value = val
+        db.save(self.route)
+        db.close()
 
     def stickers(self):
         db = load_workbook(self.route)

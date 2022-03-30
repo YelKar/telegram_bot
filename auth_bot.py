@@ -46,7 +46,9 @@ def meet(update: Update, context: CallbackContext):
     """
     user_id = update.message.from_user.id
     if user_id in db.users():
-        pass
+        return
+
+    context.user_data["user"] = [user_id]
     ask_name(update, context)
 
 
@@ -73,7 +75,7 @@ def ask_sex(update: Update, context: CallbackContext):  # key_board
     name = update.message.text
 
     if validate_name(name):
-        context.user_data["name"] = name
+        context.user_data["user"].append(name)
         update.message.reply_text(
             f"Приятно познакомиться, {name}!\n"
             "Выберите ваш пол",
@@ -96,6 +98,7 @@ def ask_grade(update: Update, context: CallbackContext):  # key_board
     sex = update.message.text
 
     if validate_sex(sex):
+        context.user_data["user"].append(sex)
         ReplyKeyboardRemove()
 
         update.message.reply_text(
@@ -104,6 +107,16 @@ def ask_grade(update: Update, context: CallbackContext):  # key_board
         )
     else:
         ask_sex(update, context)
+
+
+def greed(update: Update, context: CallbackContext):
+
+    grade = update.message.text
+    if validate_grade(grade):
+        context.user_data["user"].append(grade)
+        db.new_user(context.user_data["user"])
+    else:
+        ask_grade(update, context)
 
 
 def get_id(update: Update):
