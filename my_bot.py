@@ -130,6 +130,7 @@ def get_grade(update: Update, context: CallbackContext):  # key_board
     :param context:
     :return:
     """
+    ReplyKeyboardRemove()
     grade = update.message.text
     if not validate_grade(grade):
         update.message.reply_text(
@@ -145,6 +146,10 @@ def get_grade(update: Update, context: CallbackContext):  # key_board
     print(*context.user_data["user"], sep="\n")
     print("_" * 50)
     print(Style.RESET_ALL)
+    return ConversationHandler.END
+
+
+def cancel(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
