@@ -1,5 +1,6 @@
 from telegram.ext import MessageHandler, Filters, Updater, CallbackContext, ConversationHandler, CommandHandler
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram.parsemode import ParseMode
 from key import TOKEN
 from base import DB
 from colorama import Fore, Style
@@ -61,7 +62,8 @@ def meet(update: Update, context: CallbackContext):
     )
     user_id = update.message.from_user.id
     if user_id in db.users():
-        return
+        update.message.reply_text("Вы уже зарегистрированы")
+        return ConversationHandler.END
 
     update.message.reply_text(
         "Представьтесь, пожалуйста.\n"
@@ -146,6 +148,9 @@ def get_grade(update: Update, context: CallbackContext):  # key_board
     print(*context.user_data["user"], sep="\n")
     print("_" * 50)
     print(Style.RESET_ALL)
+    update.message.reply_text("<b><u>Вы зарегистрированы</u></b>",
+                              parse_mode=ParseMode.HTML)
+    ReplyKeyboardRemove()
     return ConversationHandler.END
 
 
