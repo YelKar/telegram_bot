@@ -158,7 +158,7 @@ def get_id(update: Update):
 
 
 def validate_name(name: str) -> bool:
-    return name.isalpha()
+    return name.isalpha() and name[0].isupper() and name[1:].islower()
 
 
 def validate_sex(sex: str) -> bool:
@@ -166,7 +166,7 @@ def validate_sex(sex: str) -> bool:
 
 
 def validate_grade(grade: str) -> bool:
-    return True
+    return any(map(lambda x: grade in x, grades_keyboard))
 
 
 if __name__ == '__main__':
