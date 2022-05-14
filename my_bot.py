@@ -4,7 +4,6 @@ from telegram.parsemode import ParseMode
 from key import TOKEN
 from base import DB
 from colorama import Fore, Style
-import re
 
 db = DB()
 NAME, SEX, GRADE = range(3)
