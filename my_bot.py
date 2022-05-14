@@ -21,19 +21,16 @@ def main():
 
         states={
             NAME: [
-                MessageHandler(Filters.regex(r"^[А-Я][а-я]{1,30}$"), get_name),
-                MessageHandler(Filters.text, invalid_value(
-                    "Неверное имя!\nПовторите, пожалуйста!\nПример: <b>И</b><u>ван</u>",
-                    NAME
-                ))
+                MessageHandler(Filters.regex(r"^[А-ЯA-z][а-яa-z]{1,30}$"), get_name),
+                invalid_value("Неверное имя!\nПовторите, пожалуйста!\nПример: <b>И</b><u>ван</u>", NAME)
             ],
             SEX: [
                 MessageHandler(Filters.regex(r"(?i)Мужской|Женский"), get_sex),
-                MessageHandler(Filters.text, invalid_value("Неверный пол!\nПовторите, пожалуйста!", SEX))
+                invalid_value("Неверный пол!\nПовторите, пожалуйста!", SEX)
             ],
             GRADE: [
                 MessageHandler(Filters.regex(r"^([5-9]|10|11)(н|о|п)$"), get_grade),
-                MessageHandler(Filters.text, invalid_value("Неверный Класс!\nПовторите, пожалуйста!", GRADE))
+                invalid_value("Неверный Класс!\nПовторите, пожалуйста!", GRADE)
             ],
         },
 
@@ -165,7 +162,7 @@ def invalid_value(text: str, next):
             return cancel(update, context)
         update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return next
-    return answer
+    return MessageHandler(Filters.text, answer)
 
 
 if __name__ == '__main__':
