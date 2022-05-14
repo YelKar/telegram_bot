@@ -51,7 +51,7 @@ class DB:
         db.close()
         return user_dict
 
-    def new_user(self, user):
+    def new_user(self, user: list):
         db = load_workbook(self.route)
         page = db["users"]
         row = page.max_row + 1

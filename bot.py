@@ -1,6 +1,7 @@
 from time import ctime
 from key import TOKEN
 from functions import *
+from git import *
 
 
 def main():
@@ -9,6 +10,13 @@ def main():
         use_context=True
     )
     dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(
+        CommandHandler("cd", cd)
+    )
+    dispatcher.add_handler(
+        CommandHandler("place", what_place)
+    )
     dispatcher.add_handler(
         CommandHandler("img", img)
     )

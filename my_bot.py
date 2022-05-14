@@ -4,32 +4,45 @@ from telegram.parsemode import ParseMode
 from key import TOKEN
 from base import DB
 from colorama import Fore, Style
-
+import re
 
 db = DB()
-NAME, SEX, GRADE, GREED = range(4)
+NAME, SEX, GRADE = range(3)
 
 
 def main():
     updater = Updater(
-        token=TOKEN,
-        use_context=True
+        token=TOKEN
     )
     dispatcher = updater.dispatcher
+    test_regex = MessageHandler(Filters.regex(r"^([5-9]|10|11)(н|о|п)$"), echo)
 
     meet_handler = ConversationHandler(
         entry_points=[CommandHandler("start", meet)],
 
         states={
-            NAME: [MessageHandler(Filters.text, get_name)],
-            SEX: [MessageHandler(Filters.text, get_sex)],
-            GRADE: [MessageHandler(Filters.text, get_grade)],
+            NAME: [
+                MessageHandler(Filters.regex(r"^[А-Я][а-я]{1,30}$"), get_name),
+                MessageHandler(Filters.text, invalid_value(
+                    "Неверное имя!\nПовторите, пожалуйста!\nПример: <b>И</b><u>ван</u>",
+                    NAME
+                ))
+            ],
+            SEX: [
+                MessageHandler(Filters.regex(r"(?i)Мужской|Женский"), get_sex),
+                MessageHandler(Filters.text, invalid_value("Неверный пол!\nПовторите, пожалуйста!", SEX))
+            ],
+            GRADE: [
+                MessageHandler(Filters.regex(r"^([5-9]|10|11)(н|о|п)$"), get_grade),
+                MessageHandler(Filters.text, invalid_value("Неверный Класс!\nПовторите, пожалуйста!", GRADE))
+            ],
         },
 
-        fallbacks=[]
+        fallbacks=[MessageHandler(Filters.text("Отмена"), cancel), CommandHandler("cancel", cancel)]
     )
 
     dispatcher.add_handler(meet_handler)
+    dispatcher.add_handler(test_regex)
 
     updater.start_polling()
     print("Bot had been started")
@@ -42,6 +55,10 @@ grades_keyboard = [
     else [f"{grade}н", f"{grade}о"]
     for grade in range(5, 12)
 ]
+
+
+def echo(update: Update, context: CallbackContext):
+    update.message.reply_text(update.message.text)
 
 
 # start
@@ -58,7 +75,7 @@ def meet(update: Update, context: CallbackContext):
     :return: None
     """
     update.message.reply_text(
-        "Здравствуйте!"
+        "Здравствуйте!", reply_markup=ReplyKeyboardRemove()
     )
     user_id = update.message.from_user.id
     if user_id in db.users():
@@ -80,26 +97,19 @@ def get_name(update: Update, context: CallbackContext):
     :param context:
     :return:
     """
-
     name = update.message.text
 
-    if validate_name(name):
-        context.user_data["user"].append(name)
-        update.message.reply_text(
-            f"Приятно познакомиться, {name}!\n"
-            "Выберите ваш пол",
-
-            reply_markup=ReplyKeyboardMarkup(  # Создание клавиатуры
-                [["Мужской"], ["Женский"]],
-                one_time_keyboard=True
-            )
-        )
-        return SEX
+    context.user_data["user"].append(name)
     update.message.reply_text(
-        "Неверное имя!\n"
-        "Повторите, пожалуйста!"
+        f"Приятно познакомиться, {name}!\n"
+        "Выберите ваш пол",
+
+        reply_markup=ReplyKeyboardMarkup(  # Создание клавиатуры
+            [["Мужской"], ["Женский"]],
+            one_time_keyboard=True
+        )
     )
-    return NAME
+    return SEX
 
 
 def get_sex(update: Update, context: CallbackContext):  # key_board
@@ -111,18 +121,12 @@ def get_sex(update: Update, context: CallbackContext):  # key_board
     """
     sex = update.message.text
 
-    if validate_sex(sex):
-        context.user_data["user"].append(sex)
-        update.message.reply_text(
-            "Выберите ваш класс",
-            reply_markup=ReplyKeyboardMarkup(grades_keyboard, one_time_keyboard=True)
-        )
-        return GRADE
+    context.user_data["user"].append(sex)
     update.message.reply_text(
-        "Неверный пол!\n"
-        "Повторите, пожалуйста!"
+        "Выберите ваш класс",
+        reply_markup=ReplyKeyboardMarkup(grades_keyboard, one_time_keyboard=True)
     )
-    return SEX
+    return GRADE
 
 
 def get_grade(update: Update, context: CallbackContext):  # key_board
@@ -132,14 +136,7 @@ def get_grade(update: Update, context: CallbackContext):  # key_board
     :param context:
     :return:
     """
-    ReplyKeyboardRemove()
     grade = update.message.text
-    if not validate_grade(grade):
-        update.message.reply_text(
-            "Неверный Класс!\n"
-            "Повторите, пожалуйста!"
-        )
-        return GRADE
     context.user_data["user"].append(grade)
     db.new_user(context.user_data["user"])
     print(Fore.LIGHTGREEN_EX + Style.BRIGHT)
@@ -149,12 +146,12 @@ def get_grade(update: Update, context: CallbackContext):  # key_board
     print("_" * 50)
     print(Style.RESET_ALL)
     update.message.reply_text("<b><u>Вы зарегистрированы</u></b>",
-                              parse_mode=ParseMode.HTML)
-    ReplyKeyboardRemove()
+                              parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
 def cancel(update: Update, context: CallbackContext):
+    update.message.reply_text("/start - зарегистрироваться", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
 
@@ -162,16 +159,14 @@ def get_id(update: Update):
     return update.message.from_user.id
 
 
-def validate_name(name: str) -> bool:
-    return name.isalpha() and name[0].isupper() and name[1:].islower()
-
-
-def validate_sex(sex: str) -> bool:
-    return True
-
-
-def validate_grade(grade: str) -> bool:
-    return any(map(lambda x: grade in x, grades_keyboard))
+def invalid_value(text: str, next):
+    def answer(update: Update, context: CallbackContext):
+        message_text = update.message.text
+        if message_text == "Отмена" or message_text == "/cancel":
+            return cancel(update, context)
+        update.message.reply_text(text, parse_mode=ParseMode.HTML)
+        return next
+    return answer
 
 
 if __name__ == '__main__':
