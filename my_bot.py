@@ -7,6 +7,7 @@ from colorama import Fore, Style
 
 db = DB()
 NAME, SEX, GRADE = range(3)
+WANT_TO_ADD_STICKER, KEYWORD, ANSWER = range(3)
 
 
 def main():
@@ -14,7 +15,7 @@ def main():
         token=TOKEN
     )
     dispatcher = updater.dispatcher
-    test_regex = MessageHandler(Filters.regex(r"^([5-9]|10|11)(н|о|п)$"), echo)
+    echo_regex = MessageHandler(Filters.all, echo)
 
     meet_handler = ConversationHandler(
         entry_points=[CommandHandler("start", meet)],
@@ -37,8 +38,21 @@ def main():
         fallbacks=[MessageHandler(Filters.text("Отмена"), cancel), CommandHandler("cancel", cancel)]
     )
 
+    sticker_handler = ConversationHandler(
+        entry_points=[MessageHandler(Filters.sticker, get_sticker)],
+
+        states={
+            WANT_TO_ADD_STICKER: [MessageHandler(Filters.regex(r"^(Да|Нет)$"), want_to_add_sticker),
+                                  invalid_value("Да/Нет", WANT_TO_ADD_STICKER)],
+            KEYWORD: [MessageHandler(Filters.all, get_keyword)],
+            ANSWER: [MessageHandler(Filters.all, get_answer)],
+        },
+        fallbacks=[MessageHandler(Filters.text(["Отмена", "/cancel"]), cancel)]
+    )
+
+    # dispatcher.add_handler(echo_regex)
     dispatcher.add_handler(meet_handler)
-    dispatcher.add_handler(test_regex)
+    dispatcher.add_handler(sticker_handler)
 
     updater.start_polling()
     print("Bot had been started")
@@ -54,7 +68,10 @@ grades_keyboard = [
 
 
 def echo(update: Update, context: CallbackContext):
-    update.message.reply_text(update.message.text)
+    stickers = list(filter(lambda x: x[1]["keyword"] == update.message.text, db.stickers().items()))
+    if stickers:
+        update.message.reply_sticker(stickers[0][0])
+    print(update.message.sticker)
 
 
 # start
@@ -163,6 +180,53 @@ def invalid_value(text: str, next):
         update.message.reply_text(text, parse_mode=ParseMode.HTML)
         return next
     return MessageHandler(Filters.text, answer)
+
+
+#stickers
+def get_sticker(update: Update, context: CallbackContext):
+    sticker = update.message.sticker
+    file_unique_id = update.message.sticker.file_unique_id
+    if file_unique_id in db.stickers():
+        update.message.reply_text(
+            db.stickers()[sticker.file_unique_id]["answer"]
+        )
+        return ConversationHandler.END
+    else:
+        context.user_data["add_sticker"] = {
+            "file_id": sticker.thumb.file_id,
+            "file_unique_id": file_unique_id
+        }
+        update.message.reply_text(
+            "У меня в базе нет такого стикера\n"
+            "Хотите добавить его?",
+            reply_markup=ReplyKeyboardMarkup([["Да", "Нет"]])
+        )
+
+        return WANT_TO_ADD_STICKER
+
+
+def want_to_add_sticker(update: Update, context: CallbackContext):
+    if update.message.text == "Да":
+        update.message.reply_text("Введите слово или фразу, при получении которой я буду присылать этот стикер\n"
+                                  'Например: "<i>keyword: Привет</i>"', parse_mode=ParseMode.HTML)
+        return KEYWORD
+    else:
+        context.user_data.pop("add_sticker")
+        return cancel(update, context)
+
+
+def get_keyword(update: Update, context: CallbackContext):
+    context.user_data["add_sticker"]["keyword"] = update.message.text
+    update.message.reply_text("Теперь введите фразу, которой я буду отвечать на этот стикер\n"
+                              'Например: "<i>answer: Привет</i>"')
+    return ANSWER
+
+
+def get_answer(update: Update, context: CallbackContext):
+    context.user_data["add_sticker"]["answer"] = update.message.text
+    db.new_sticker(**context.user_data["add_sticker"])
+    update.message.reply_text("Стикер успешно добавлен\nСпасибо!")
+    return ConversationHandler.END
 
 
 if __name__ == '__main__':
