@@ -15,7 +15,7 @@ def main():
         token=TOKEN
     )
     dispatcher = updater.dispatcher
-    echo_regex = MessageHandler(Filters.all, echo)
+    echo_handler = MessageHandler(Filters.all, echo)
 
     meet_handler = ConversationHandler(
         entry_points=[CommandHandler("start", meet)],
@@ -50,9 +50,9 @@ def main():
         fallbacks=[MessageHandler(Filters.text(["Отмена", "/cancel"]), cancel)]
     )
 
-    # dispatcher.add_handler(echo_regex)
     dispatcher.add_handler(meet_handler)
     dispatcher.add_handler(sticker_handler)
+    dispatcher.add_handler(echo_handler)
 
     updater.start_polling()
     print("Bot had been started")
@@ -69,9 +69,9 @@ grades_keyboard = [
 
 def echo(update: Update, context: CallbackContext):
     stickers = list(filter(lambda x: x[1]["keyword"] == update.message.text, db.stickers().items()))
+    print(stickers)
     if stickers:
-        update.message.reply_sticker(stickers[0][0])
-    print(update.message.sticker)
+        update.message.reply_sticker(stickers[0][1]["file_id"])
 
 
 # start
@@ -193,7 +193,7 @@ def get_sticker(update: Update, context: CallbackContext):
         return ConversationHandler.END
     else:
         context.user_data["add_sticker"] = {
-            "file_id": sticker.thumb.file_id,
+            "file_id": sticker.file_id,
             "file_unique_id": file_unique_id
         }
         update.message.reply_text(
