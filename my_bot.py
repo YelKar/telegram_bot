@@ -5,6 +5,7 @@ from key import TOKEN
 from base import DB
 from colorama import Fore, Style
 
+
 db = DB()
 NAME, SEX, GRADE = range(3)
 WANT_TO_ADD_STICKER, KEYWORD, ANSWER = range(3)

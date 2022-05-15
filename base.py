@@ -1,37 +1,6 @@
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-bd = load_workbook("base.xlsx")
-sticker_page: Worksheet = bd["stickers"]
-print(type(sticker_page) == Worksheet)
-
-
-def print_table(page: str = "stickers"):
-    for key, val, ans in bd[page].values:
-        print(str(key).ljust(20), str(val).ljust(80), str(ans))
-
-
-def get_stickers(sticker_name: str = None, page: str = "stickers"):
-    db = load_workbook("base.xlsx")
-    return get_stickers(page=page).get(sticker_name, None)\
-        if sticker_name \
-        else {key: val for key, *val in db[page].values}
-
-
-def about_sheet(table: Worksheet = bd["stickers"]):
-    print("_" * 10 + "about".ljust(90, "_"))
-    print("max_row:".ljust(20) + str(table.max_row))
-    print("max_column:".ljust(20) + str(table.max_column))
-    print("_" * 100)
-
-
-def insert_sticker(keyword, sticker, answer):
-    row = sticker_page.max_row + 1
-    sticker_page.cell(row=row, column=1).value = keyword
-    sticker_page.cell(row=row, column=2).value = sticker
-    sticker_page.cell(row=row, column=3).value = answer
-    bd.save("base.xlsx")
-
 
 class DB:
     def __init__(self):
@@ -87,12 +56,3 @@ class DB:
         cell(row, 4).value = file_unique_id
         db.save(self.route)
         db.close()
-
-
-if __name__ == '__main__':
-
-    print(type(bd["stickers"].values))
-    print(sticker_page.title)
-    print_table()
-
-    about_sheet()
